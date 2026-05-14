@@ -1,0 +1,6 @@
+{
+  "threshold": 25,
+  "warn_at": 21,
+  "remind_every": 3,
+  "auto_suggest": true
+}

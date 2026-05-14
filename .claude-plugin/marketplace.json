@@ -1,0 +1,20 @@
+{
+  "name": "auto-handoff-marketplace",
+  "owner": {
+    "name": "impawangupta"
+  },
+  "metadata": {
+    "description": "Auto-handoff plugin for Claude Code - monitors context length and offers seamless session handoff"
+  },
+  "plugins": [
+    {
+      "name": "auto-handoff",
+      "source": {
+        "source": "github",
+        "repo": "impawangupta/claude-auto-handoff"
+      },
+      "description": "Automatically monitors context length and offers handoff to a fresh Claude session for optimal response quality.",
+      "version": "1.0.0"
+    }
+  ]
+}

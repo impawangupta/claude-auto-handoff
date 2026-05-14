@@ -18,7 +18,13 @@ Ask:
 
 ## Step 3: Write Config
 
-Write to `~/.claude-auto-handoff/config.json`:
+Create the plugin directory and write config:
+
+```bash
+mkdir -p ~/.claude/workspace/plugins/auto-handoff
+```
+
+Write to `~/.claude/workspace/plugins/auto-handoff/config.json`:
 
 ```json
 {
@@ -29,19 +35,13 @@ Write to `~/.claude-auto-handoff/config.json`:
 }
 ```
 
-Create the directory if it doesn't exist:
-```bash
-mkdir -p ~/.claude-auto-handoff
-```
-
 ## Step 4: Install the Hook Script
 
-Copy the hook script to the config directory so it has a stable path:
+Copy the hook script to the plugin directory so it has a stable path:
 
 ```bash
-mkdir -p ~/.claude-auto-handoff
-cp [plugin-dir]/hooks/context-monitor.sh ~/.claude-auto-handoff/context-monitor.sh
-chmod +x ~/.claude-auto-handoff/context-monitor.sh
+cp [plugin-dir]/hooks/context-monitor.sh ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
+chmod +x ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
 ```
 
 ## Step 5: Register the Stop Hook
@@ -58,7 +58,7 @@ Tell the user:
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${HOME}/.claude-auto-handoff/context-monitor.sh\""
+            "command": "bash \"${HOME}/.claude/workspace/plugins/auto-handoff/context-monitor.sh\""
           }
         ]
       }

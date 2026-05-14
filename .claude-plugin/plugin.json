@@ -1,7 +1,7 @@
 {
   "name": "auto-handoff",
   "description": "Automatically monitors context length and creates handoff documents so you can continue work seamlessly in a fresh Claude Code session. Warns at 21 turns, offers handoff at 25 turns by default.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "impawangupta"
   },

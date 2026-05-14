@@ -97,11 +97,11 @@ Override thresholds for a specific project by adding `.claude-auto-handoff.json`
 }
 ```
 
-This overrides your global `~/.claude-auto-handoff/config.json` for that project only.
+This overrides your global `~/.claude/workspace/plugins/auto-handoff/config.json` for that project only.
 
 ## Global Config
 
-Located at `~/.claude-auto-handoff/config.json`:
+Located at `~/.claude/workspace/plugins/auto-handoff/config.json`:
 
 ```json
 {
@@ -132,7 +132,7 @@ If `/handoff:setup` doesn't work for your environment, add this to `~/.claude/se
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${HOME}/.claude-auto-handoff/context-monitor.sh\""
+            "command": "bash \"${HOME}/.claude/workspace/plugins/auto-handoff/context-monitor.sh\""
           }
         ]
       }
@@ -144,9 +144,9 @@ If `/handoff:setup` doesn't work for your environment, add this to `~/.claude/se
 Then copy the hook script:
 
 ```bash
-mkdir -p ~/.claude-auto-handoff
-cp hooks/context-monitor.sh ~/.claude-auto-handoff/context-monitor.sh
-chmod +x ~/.claude-auto-handoff/context-monitor.sh
+mkdir -p ~/.claude/workspace/plugins/auto-handoff
+cp hooks/context-monitor.sh ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
+chmod +x ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
 ```
 
 ## Tips

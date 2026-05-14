@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${HOME}/.claude-auto-handoff/context-monitor.sh\""
+            "command": "bash \"${HOME}/.claude/workspace/plugins/auto-handoff/context-monitor.sh\""
           }
         ]
       }

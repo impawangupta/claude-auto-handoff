@@ -6,14 +6,18 @@
 
 set -euo pipefail
 
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
+PLUGIN_DIR="${HOME}/.claude/workspace/plugins/auto-handoff"
+CONFIG_GLOBAL="${PLUGIN_DIR}/config.json"
+CONFIG_LOCAL="${PWD}/.claude-auto-handoff.json"
+SESSION_DIR="${PLUGIN_DIR}/sessions"
+
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DEFAULT_THRESHOLD=25
 DEFAULT_WARN_AT=21
 DEFAULT_REMIND_EVERY=3
-
-CONFIG_GLOBAL="${HOME}/.claude-auto-handoff/config.json"
-CONFIG_LOCAL="${PWD}/.claude-auto-handoff.json"
 
 THRESHOLD=$DEFAULT_THRESHOLD
 WARN_AT=$DEFAULT_WARN_AT
@@ -31,8 +35,8 @@ load_value() {
 }
 
 if [ -f "$CONFIG_GLOBAL" ]; then
-  THRESHOLD=$(load_value "$CONFIG_GLOBAL" "threshold" $DEFAULT_THRESHOLD)
-  WARN_AT=$(load_value   "$CONFIG_GLOBAL" "warn_at"   $DEFAULT_WARN_AT)
+  THRESHOLD=$(load_value "$CONFIG_GLOBAL" "threshold"    $DEFAULT_THRESHOLD)
+  WARN_AT=$(load_value   "$CONFIG_GLOBAL" "warn_at"      $DEFAULT_WARN_AT)
   REMIND_EVERY=$(load_value "$CONFIG_GLOBAL" "remind_every" $DEFAULT_REMIND_EVERY)
 fi
 
@@ -45,7 +49,6 @@ fi
 
 # ── Session tracking ──────────────────────────────────────────────────────────
 
-SESSION_DIR="${HOME}/.claude-auto-handoff/sessions"
 mkdir -p "$SESSION_DIR"
 
 # Session key: parent PID (stable for one claude invocation) + working dir

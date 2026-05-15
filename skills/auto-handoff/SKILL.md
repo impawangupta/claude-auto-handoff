@@ -8,14 +8,34 @@ description: Use when a context monitor signal appears, when a handoff exists fo
 ## Paths
 
 ```
-PLUGIN_DIR  = ~/.claude/workspace/plugins/handoff
-HANDOFFS    = ~/.claude/workspace/plugins/handoff/handoffs
-CONFIG      = ~/.claude/workspace/plugins/handoff/config.json
-RESUME_FLAG = ~/.claude/workspace/plugins/handoff/.pending-resume
+PLUGIN_DIR   = ~/.claude/workspace/plugins/handoff
+HANDOFFS_DIR = ~/.claude/workspace/plugins/handoff/handoffs
+SESSIONS_DIR = ~/.claude/workspace/plugins/handoff/sessions
+CONFIG       = ~/.claude/workspace/plugins/handoff/config.json
+RESUME_FLAG  = ~/.claude/workspace/plugins/handoff/.pending-resume
 ```
 
-Handoff files are named: `{project-basename}_{YYYY-MM-DD_HHMM}.md`
-Example: `my-app_2026-05-15_1430.md`
+### Handoff filename convention
+
+Use the full working directory path with `/` replaced by `-` (strip the leading `-`), plus timestamp:
+
+```bash
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+# /Users/themagician/ai/myapp -> Users-themagician-ai-myapp
+HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/${DIR_KEY}_$(date +%Y-%m-%d_%H%M).md"
+```
+
+### Session pointer
+
+When a handoff is created, write its path to a session pointer so resume always knows the latest:
+
+```bash
+DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+echo "$HANDOFF_FILE" > "$SESSION_POINTER"
+```
+
+On resume, read the pointer first. Fall back to newest file matching the prefix if pointer is absent.
 
 ## On Session Start
 
@@ -49,21 +69,29 @@ Do all of this silently. Tell the user nothing.
 ### 2. Check for pending resume
 
 If `~/.claude/workspace/plugins/handoff/.pending-resume` exists:
-- Delete the flag: `rm ~/.claude/workspace/plugins/handoff/.pending-resume`
-- Find the most recent handoff for this project:
-  ```bash
-  ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
-  ```
-- Read it silently
-- Resume immediately without asking any questions:
-  > "Resuming: [title]. Next: [first real next step]. Starting now."
-- Then start working
+
+1. Delete the flag: `rm ~/.claude/workspace/plugins/handoff/.pending-resume`
+2. Find the latest handoff for this session via the pointer file:
+   ```bash
+   DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+   SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+   ```
+   If pointer exists, read the path inside it. Otherwise fall back to newest file matching `${DIR_KEY}_*`:
+   ```bash
+   DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+   ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^${DIR_KEY}_" | head -1
+   ```
+3. Read the handoff silently
+4. Resume immediately without asking:
+   > "Resuming: [title]. Next: [first real next step]. Starting now."
+5. Start working
 
 ### 3. Check for existing handoff (no pending flag)
 
-Find the most recent handoff for the current project directory:
+Find the latest handoff for this project:
 ```bash
-ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^${DIR_KEY}_" | head -1
 ```
 
 If found:
@@ -79,7 +107,7 @@ Say at the end of your current response:
 > "This session is getting quite long — for optimal responses, I'd recommend a handoff to a fresh session. Want me to take care of that now?"
 
 - Only offer once per hook signal
-- If user says yes → run the handoff flow below
+- If user says yes → run the handoff creation flow below
 - If user says no → respect it, don't ask again this session
 
 When you see `[CONTEXT MONITOR] Turn N: This session is getting on the longer side`:
@@ -94,21 +122,35 @@ When you see `[CONTEXT MONITOR] Turn N: This session is getting on the longer si
    git diff --stat
    git log --oneline -10
    ```
-2. Check for an existing handoff for this project — carry forward still-relevant goal, failures, and warnings
-3. Infer everything from conversation + git. Do not ask the user any questions.
-4. Determine the handoff file path:
+
+2. Build the file path:
    ```bash
-   HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PWD")_$(date +%Y-%m-%d_%H%M).md"
+   DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+   HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/${DIR_KEY}_$(date +%Y-%m-%d_%H%M).md"
    ```
-5. Write the handoff document to that path (see format below)
-6. Set the resume flag:
+
+3. Check for an existing handoff — carry forward still-relevant goal, failures, and warnings from previous handoffs for this project.
+
+4. Infer everything from conversation + git. Do not ask the user any questions.
+
+5. Write the handoff document (format below).
+
+6. Write the session pointer:
+   ```bash
+   DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+   SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+   echo "$HANDOFF_FILE" > "$SESSION_POINTER"
+   ```
+
+7. Set the resume flag:
    ```bash
    touch ~/.claude/workspace/plugins/handoff/.pending-resume
    ```
-7. Tell the user:
+
+8. Tell the user:
    > "Handoff saved. Type `/clear` to start fresh — I'll automatically pick up where we left off."
 
-Note: Claude Code slash commands cannot be triggered programmatically. The user must type `/clear` themselves. The pending-resume flag ensures auto-resume happens on the next interaction after clear.
+Note: `/clear` must be typed by the user — Claude Code slash commands cannot be triggered programmatically.
 
 ## HANDOFF.md Format
 
@@ -116,7 +158,7 @@ Note: Claude Code slash commands cannot be triggered programmatically. The user 
 # Handoff: [brief title]
 
 **Generated**: [YYYY-MM-DD HH:MM]
-**Project**: [basename of working directory]
+**Project**: [full working directory path]
 **Branch**: [branch name or "no git"]
 **Status**: [In Progress / Blocked / Ready for Review]
 

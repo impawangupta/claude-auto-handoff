@@ -14,36 +14,41 @@ git diff --stat
 git log --oneline -10
 ```
 
-Check for an existing handoff for this project:
+## Step 2: Build the File Path
+
 ```bash
-ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/${DIR_KEY}_$(date +%Y-%m-%d_%H%M).md"
+```
+
+Example: `/Users/themagician/ai/myapp` → `Users-themagician-ai-myapp_2026-05-15_1430.md`
+
+## Step 3: Check for Previous Handoffs
+
+Find the most recent existing handoff for this project:
+```bash
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^${DIR_KEY}_" | head -1
 ```
 
 If found, read it — carry forward still-relevant goal, failed approaches, and warnings.
 
-## Step 2: Infer Everything from the Conversation
+## Step 4: Infer Everything from the Conversation
 
 From the full conversation history, extract without asking:
 - **Goal**: what the user is trying to accomplish (merge with previous handoff goal if still relevant)
 - **Current state**: what is working right now
 - **Files touched**: from git diff or files mentioned and edited in conversation
-- **What changed**: meaningful changes made this session and any prior sessions
+- **What changed**: meaningful changes made this session
 - **What failed**: anything tried and abandoned — carry forward from previous handoff if still applicable
 - **Next steps**: logical next actions based on what remains
 
-## Step 3: Determine File Path
-
-```bash
-HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PWD")_$(date +%Y-%m-%d_%H%M).md"
-```
-
-## Step 4: Write the Handoff Document
+## Step 5: Write the Handoff Document
 
 ```markdown
 # Handoff: [inferred title]
 
 **Generated**: [YYYY-MM-DD HH:MM]
-**Project**: [basename of current directory]
+**Project**: [full $PWD path]
 **Branch**: [branch or "no git"]
 **Status**: [In Progress / Blocked / Ready for Review]
 
@@ -68,15 +73,23 @@ HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PW
 - [inferred next steps]
 ```
 
-## Step 5: Set Resume Flag
+## Step 6: Write the Session Pointer
+
+This file lets resume always find the latest handoff for this session, even if multiple were created:
+
+```bash
+DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+echo "$HANDOFF_FILE" > "$SESSION_POINTER"
+```
+
+## Step 7: Set Resume Flag
 
 ```bash
 touch ~/.claude/workspace/plugins/handoff/.pending-resume
 ```
 
-## Step 6: Tell the User
+## Step 8: Tell the User
 
 Say:
-> "Handoff saved to `~/.claude/workspace/plugins/handoff/handoffs/[filename]`. Type `/clear` to start fresh — I'll automatically pick up where we left off."
-
-Note: `/clear` must be typed by the user — Claude Code slash commands cannot be triggered programmatically. The pending-resume flag ensures auto-resume happens on the very next interaction after clear.
+> "Handoff saved. Type `/clear` to start fresh — I'll automatically pick up where we left off."

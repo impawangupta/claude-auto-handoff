@@ -14,18 +14,20 @@ git diff --stat
 git log --oneline -5
 ```
 
-Check for an existing handoff for this project:
+## Build the File Path
+
 ```bash
-ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/${DIR_KEY}_$(date +%Y-%m-%d_%H%M).md"
+```
+
+## Check for Previous Handoffs
+
+```bash
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^${DIR_KEY}_" | head -1
 ```
 
 If found, read it and carry forward still-relevant context.
-
-## Determine File Path
-
-```bash
-HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PWD")_$(date +%Y-%m-%d_%H%M).md"
-```
 
 ## Write the Handoff Document
 
@@ -33,7 +35,7 @@ HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PW
 # Handoff: [inferred brief title]
 
 **Generated**: [YYYY-MM-DD HH:MM]
-**Project**: [basename of current directory]
+**Project**: [full $PWD path]
 **Branch**: [branch or "no git"]
 **Status**: [In Progress / Blocked / Ready for Review]
 
@@ -58,5 +60,13 @@ HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PW
 - [inferred from conversation]
 ```
 
+## Write the Session Pointer
+
+```bash
+DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+echo "$HANDOFF_FILE" > "$SESSION_POINTER"
+```
+
 After writing, say:
-> "Handoff saved to `~/.claude/workspace/plugins/handoff/handoffs/[filename]`. Type `/clear` to start fresh — I'll automatically resume."
+> "Handoff saved to `[HANDOFF_FILE]`. Type `/clear` to start fresh — I'll automatically resume."

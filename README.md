@@ -52,12 +52,17 @@ When you confirm, Claude:
 Handoffs are saved to your Claude workspace — never to your project directory:
 
 ```
-~/.claude/workspace/plugins/handoff/handoffs/{project}_{timestamp}.md
+~/.claude/workspace/plugins/handoff/handoffs/{full-path-with-dashes}_{timestamp}.md
 ```
 
-Example: `~/.claude/workspace/plugins/handoff/handoffs/my-app_2026-05-15_1430.md`
+The full working directory path is used (with `/` replaced by `-`) to avoid collisions between projects that share the same directory name:
 
-Each project keeps its own history. The most recent handoff is automatically used on resume.
+```
+/Users/you/work/my-app  →  Users-you-work-my-app_2026-05-15_1430.md
+/Users/you/side/my-app  →  Users-you-side-my-app_2026-05-15_1430.md
+```
+
+A session pointer file (`sessions/{pid}-{dir}.latest`) always tracks the most recently created handoff for the current session, so resume finds the right file even when multiple handoffs exist for the same project.
 
 ## Handoff Format
 
@@ -65,7 +70,7 @@ Each project keeps its own history. The most recent handoff is automatically use
 # Handoff: Add OAuth2 login
 
 **Generated**: 2026-05-15 14:30
-**Project**: my-app
+**Project**: /Users/you/work/my-app
 **Branch**: feature/auth
 **Status**: In Progress
 

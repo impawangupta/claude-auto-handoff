@@ -1,19 +1,27 @@
 ---
-description: Resume work from the most recent handoff for this project - reads it and continues immediately without asking questions
+description: Resume from the latest handoff for this session or project - reads it and continues immediately without asking questions
 ---
 
-Resume from the most recent handoff for this project. Do not ask the user if they want to resume — just do it.
+Resume from the most relevant handoff. Do not ask the user if they want to resume — just do it.
 
 ## 1. Find the Handoff
 
 If `$ARGUMENTS` is provided, read that path directly.
 
-Otherwise find the most recent handoff for this project:
+Otherwise, find via session pointer first (most precise — handles multiple handoffs per session):
 ```bash
-ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+cat "$SESSION_POINTER" 2>/dev/null
 ```
 
-If none found, say: "No handoff found for this project. Run `/handoff` to create one."
+If the pointer file doesn't exist or the file it points to is missing, fall back to newest file matching this project's full-path prefix:
+```bash
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^${DIR_KEY}_" | head -1
+```
+
+If nothing found, say: "No handoff found for this project. Run `/handoff` to create one."
 
 ## 2. Check for State Drift
 

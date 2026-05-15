@@ -7,7 +7,8 @@ Create a minimal handoff document. Run `git status` and `git diff --stat` silent
 ## File Path
 
 ```bash
-HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PWD")_$(date +%Y-%m-%d_%H%M).md"
+DIR_KEY=$(echo "$PWD" | tr '/' '-' | sed 's/^-//')
+HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/${DIR_KEY}_$(date +%Y-%m-%d_%H%M).md"
 ```
 
 ## Write
@@ -16,7 +17,7 @@ HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PW
 # Handoff: [task in 5 words or less]
 
 **Generated**: [YYYY-MM-DD HH:MM]
-**Project**: [basename of current directory]
+**Project**: [full $PWD path]
 
 ## Goal
 - [one sentence]
@@ -31,6 +32,14 @@ HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PW
 - Type `/clear` to start a fresh session.
 - I will automatically resume from this handoff.
 - [the single most important next step]
+```
+
+## Write the Session Pointer
+
+```bash
+DIR_SAFE=$(echo "$PWD" | tr '/' '_' | cut -c1-80)
+SESSION_POINTER="${HOME}/.claude/workspace/plugins/handoff/sessions/${PPID}-${DIR_SAFE}.latest"
+echo "$HANDOFF_FILE" > "$SESSION_POINTER"
 ```
 
 After writing, say:

@@ -2,7 +2,7 @@
 
 Automatically monitors context length and offers to hand off to a fresh Claude Code session — before response quality degrades.
 
-No more manually tracking how long your session has been running. Claude watches the context size and politely lets you know when it's time.
+No more manually tracking how long your session has been running. Claude watches the context size, politely lets you know when it's time, and handles everything automatically.
 
 ## Install
 
@@ -10,16 +10,16 @@ Inside Claude Code:
 
 ```
 /plugin marketplace add impawangupta/claude-auto-handoff
-/plugin install auto-handoff
+/plugin install handoff
 ```
 
-Then run the guided setup:
+That's it. No setup required — defaults are applied automatically on first use.
+
+If you want to change the thresholds, run:
 
 ```
 /handoff:setup
 ```
-
-This sets your thresholds and installs the Stop hook that enables automatic monitoring.
 
 ## How It Works
 
@@ -27,33 +27,45 @@ A Stop hook runs after every Claude response and tracks how many turns the sessi
 
 | Turn | What happens |
 |------|-------------|
-| 21 (warn_at) | Claude notes internally — no interruption |
+| 21 (warn_at) | Claude notes internally — no interruption to you |
 | 25 (threshold) | Claude politely offers a handoff |
 | Every 3 turns after | Gentle reminder if you haven't acted |
 
 When you confirm, Claude:
-1. Runs `git status`, `git diff`, `git log` to gather context
-2. Writes a structured `HANDOFF.md`
-3. Tells you to open a fresh `claude` session — which auto-detects the handoff
+1. Reads the full conversation and runs `git status`, `git diff`, `git log`
+2. Writes a structured handoff document to `~/.claude/workspace/plugins/handoff/handoffs/`
+3. Sets a resume flag and tells you to type `/clear`
+4. After you type `/clear`, automatically resumes from the handoff on the next interaction — no questions asked
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/handoff` | Guided — Claude gathers context then asks you 5 questions |
-| `/handoff:create` | Automatic — infers everything, no questions |
-| `/handoff:quick` | Minimal — essentials only, fast |
-| `/handoff:resume` | Resume from an existing `HANDOFF.md` |
-| `/handoff:setup` | Configure thresholds and install the hook |
+| `/handoff` | Fully automatic — generates handoff from conversation + git, tells you to `/clear` |
+| `/handoff:create` | Same as above without the resume flow — just writes the file |
+| `/handoff:quick` | Minimal handoff — essentials only, fast |
+| `/handoff:resume` | Resume from the most recent handoff for this project |
+| `/handoff:setup` | Change thresholds — asks 2 questions only |
+
+## Handoff File Location
+
+Handoffs are saved to your Claude workspace — never to your project directory:
+
+```
+~/.claude/workspace/plugins/handoff/handoffs/{project}_{timestamp}.md
+```
+
+Example: `~/.claude/workspace/plugins/handoff/handoffs/my-app_2026-05-15_1430.md`
+
+Each project keeps its own history. The most recent handoff is automatically used on resume.
 
 ## Handoff Format
 
-Every `HANDOFF.md` follows this structure:
-
 ```markdown
-# Handoff: [brief title]
+# Handoff: Add OAuth2 login
 
-**Generated**: 2025-05-14 16:30
+**Generated**: 2026-05-15 14:30
+**Project**: my-app
 **Branch**: feature/auth
 **Status**: In Progress
 
@@ -77,31 +89,17 @@ Every `HANDOFF.md` follows this structure:
 - Switched to oauth4webapi which works directly with fetch.
 
 ## Next steps
-- Open a fresh Claude Code session.
-- Read this handoff file first.
+- Type `/clear` to start a fresh session.
+- I will automatically resume from this handoff.
 - Fix the refresh endpoint at src/auth/refresh.ts:42.
 - Add logout: clear httpOnly cookie, POST /api/auth/logout.
 ```
 
-`Next steps` always opens with those two fixed lines — so the next session always knows exactly what to do first.
+## Configuration
 
-## Project-Level Config
+### Global config
 
-Override thresholds for a specific project by adding `.claude-auto-handoff.json` to the project root:
-
-```json
-{
-  "threshold": 30,
-  "warn_at": 25,
-  "remind_every": 5
-}
-```
-
-This overrides your global `~/.claude/workspace/plugins/auto-handoff/config.json` for that project only.
-
-## Global Config
-
-Located at `~/.claude/workspace/plugins/auto-handoff/config.json`:
+Located at `~/.claude/workspace/plugins/handoff/config.json` (auto-created with defaults on first use):
 
 ```json
 {
@@ -114,14 +112,27 @@ Located at `~/.claude/workspace/plugins/auto-handoff/config.json`:
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `threshold` | 25 | Turns before Claude offers handoff |
-| `warn_at` | 21 | Turns before quiet internal warning |
-| `remind_every` | 3 | How often to remind after threshold |
+| `threshold` | 25 | Turns before Claude actively offers a handoff |
+| `warn_at` | 21 | Turns before Claude notes it internally |
+| `remind_every` | 3 | How often to remind after threshold is crossed |
 | `auto_suggest` | true | Enable automatic suggestions |
+
+### Project-level config
+
+Override thresholds for a specific project by adding `.claude-auto-handoff.json` to the project root:
+
+```json
+{
+  "threshold": 30,
+  "warn_at": 25
+}
+```
+
+Project config overrides global config for that directory only.
 
 ## Manual Hook Setup
 
-If `/handoff:setup` doesn't work for your environment, add this to `~/.claude/settings.json`:
+The hook is registered automatically when the plugin is installed. If you need to set it up manually, add this to `~/.claude/settings.json`:
 
 ```json
 {
@@ -132,7 +143,7 @@ If `/handoff:setup` doesn't work for your environment, add this to `~/.claude/se
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${HOME}/.claude/workspace/plugins/auto-handoff/context-monitor.sh\""
+            "command": "bash -c '[ -f \"${HOME}/.claude/workspace/plugins/handoff/context-monitor.sh\" ] && bash \"${HOME}/.claude/workspace/plugins/handoff/context-monitor.sh\" || true'"
           }
         ]
       }
@@ -144,22 +155,22 @@ If `/handoff:setup` doesn't work for your environment, add this to `~/.claude/se
 Then copy the hook script:
 
 ```bash
-mkdir -p ~/.claude/workspace/plugins/auto-handoff
-cp hooks/context-monitor.sh ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
-chmod +x ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
+mkdir -p ~/.claude/workspace/plugins/handoff
+cp hooks/context-monitor.sh ~/.claude/workspace/plugins/handoff/context-monitor.sh
+chmod +x ~/.claude/workspace/plugins/handoff/context-monitor.sh
 ```
 
 ## Tips
 
-1. **Run `/handoff` before you stop** — the guided version lets you add context Claude can't infer from git.
+1. **`What failed` is the most valuable section** — "Tried X, it broke because Y" saves hours in the next session.
 
-2. **`What failed` is the most valuable section** — "Tried X, it broke because Y" saves hours in the next session.
+2. **Use project-level config** — long exploratory sessions benefit from a higher threshold than focused bug fixes.
 
-3. **Use project-level config** — long exploratory sessions need a higher threshold than focused bug fixes.
+3. **For non-git projects** — everything still works, the git sections are simply omitted.
 
-4. **For non-git projects** — everything still works, the git sections are simply omitted.
+4. **Any AI can resume** — the handoff file is plain markdown. Pass the path to any AI agent and it can pick up the work.
 
-5. **Any AI can resume** — `HANDOFF.md` is plain markdown. Just tell another agent: "Read HANDOFF.md and continue the work."
+5. **Check your handoff history** — all handoffs are in `~/.claude/workspace/plugins/handoff/handoffs/`. Run `/handoff:resume path/to/file.md` to resume from a specific one.
 
 ## License
 

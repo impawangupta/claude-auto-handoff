@@ -1,14 +1,19 @@
 ---
-description: Resume work from an existing HANDOFF.md - reads it, checks for state drift, and continues immediately without asking questions
+description: Resume work from the most recent handoff for this project - reads it and continues immediately without asking questions
 ---
 
-Resume from a handoff. Do not ask the user if they want to resume — just do it.
+Resume from the most recent handoff for this project. Do not ask the user if they want to resume — just do it.
 
 ## 1. Find the Handoff
 
-- If `$ARGUMENTS` is provided, read that path
-- Otherwise check for `HANDOFF.md` in the current directory
-- If not found, say: "No HANDOFF.md found. Pass a path with `/handoff:resume path/to/HANDOFF.md`"
+If `$ARGUMENTS` is provided, read that path directly.
+
+Otherwise find the most recent handoff for this project:
+```bash
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+```
+
+If none found, say: "No handoff found for this project. Run `/handoff` to create one."
 
 ## 2. Check for State Drift
 

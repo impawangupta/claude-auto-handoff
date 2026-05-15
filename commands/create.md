@@ -1,24 +1,39 @@
 ---
-description: Automatically create a full handoff document from git and conversation history - no questions asked
+description: Automatically create a handoff document from git and conversation history and save it to the workspace - no questions asked
 ---
 
-Create `HANDOFF.md` without asking questions. Infer everything from git and conversation.
+Create a handoff document without asking questions. Infer everything from git and conversation.
 
 ## Gather Context
 
-Run (skip steps that fail if no git):
-- `git status`
-- `git diff --stat`
-- `git log --oneline -5`
+Run silently (skip any that fail):
+```bash
+git branch --show-current
+git status
+git diff --stat
+git log --oneline -5
+```
 
-Review the conversation for: goal, what was completed, what failed, decisions made, next steps.
+Check for an existing handoff for this project:
+```bash
+ls -t ~/.claude/workspace/plugins/handoff/handoffs/ | grep "^$(basename "$PWD")_" | head -1
+```
 
-## Write HANDOFF.md
+If found, read it and carry forward still-relevant context.
+
+## Determine File Path
+
+```bash
+HANDOFF_FILE="${HOME}/.claude/workspace/plugins/handoff/handoffs/$(basename "$PWD")_$(date +%Y-%m-%d_%H%M).md"
+```
+
+## Write the Handoff Document
 
 ```markdown
 # Handoff: [inferred brief title]
 
 **Generated**: [YYYY-MM-DD HH:MM]
+**Project**: [basename of current directory]
 **Branch**: [branch or "no git"]
 **Status**: [In Progress / Blocked / Ready for Review]
 
@@ -38,10 +53,10 @@ Review the conversation for: goal, what was completed, what failed, decisions ma
 - [from conversation, or "None"]
 
 ## Next steps
-- Open a fresh Claude Code session.
-- Read this handoff file first.
+- Type `/clear` to start a fresh session.
+- I will automatically resume from this handoff.
 - [inferred from conversation]
 ```
 
 After writing, say:
-> "Handoff saved. Open a fresh `claude` session in this directory to auto-resume."
+> "Handoff saved to `~/.claude/workspace/plugins/handoff/handoffs/[filename]`. Type `/clear` to start fresh — I'll automatically resume."

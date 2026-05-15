@@ -2,11 +2,11 @@
 description: Configure handoff thresholds - asks 2 questions only. Run this if you want to change the defaults (warn: 21 turns, handoff: 25 turns).
 ---
 
-Configure claude-auto-handoff thresholds. Ask only 2 questions.
+Configure handoff thresholds. Ask only 2 questions.
 
 ## Step 1: Show Current Settings
 
-Check `~/.claude/workspace/plugins/auto-handoff/config.json`.
+Check `~/.claude/workspace/plugins/handoff/config.json`.
 
 If it exists, show:
 > "Current settings: early warning at turn [warn_at], handoff offer at turn [threshold]."
@@ -23,10 +23,10 @@ Accept Enter/blank to keep the default.
 ## Step 3: Write Config Silently
 
 ```bash
-mkdir -p ~/.claude/workspace/plugins/auto-handoff
+mkdir -p ~/.claude/workspace/plugins/handoff
 ```
 
-Write `~/.claude/workspace/plugins/auto-handoff/config.json`:
+Write `~/.claude/workspace/plugins/handoff/config.json`:
 
 ```json
 {

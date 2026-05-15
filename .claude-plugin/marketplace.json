@@ -1,5 +1,5 @@
 {
-  "name": "auto-handoff-marketplace",
+  "name": "handoff-marketplace",
   "owner": {
     "name": "impawangupta"
   },
@@ -8,13 +8,13 @@
   },
   "plugins": [
     {
-      "name": "auto-handoff",
+      "name": "handoff",
       "source": {
         "source": "github",
         "repo": "impawangupta/claude-auto-handoff"
       },
       "description": "Automatically monitors context length and offers handoff to a fresh Claude session for optimal response quality.",
-      "version": "1.1.0"
+      "version": "1.2.0"
     }
   ]
 }

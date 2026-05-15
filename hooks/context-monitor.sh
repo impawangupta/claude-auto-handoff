@@ -8,7 +8,7 @@ set -euo pipefail
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-PLUGIN_DIR="${HOME}/.claude/workspace/plugins/auto-handoff"
+PLUGIN_DIR="${HOME}/.claude/workspace/plugins/handoff"
 CONFIG_GLOBAL="${PLUGIN_DIR}/config.json"
 CONFIG_LOCAL="${PWD}/.claude-auto-handoff.json"
 SESSION_DIR="${PLUGIN_DIR}/sessions"

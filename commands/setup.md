@@ -1,75 +1,43 @@
 ---
-description: Guided configuration - set your context thresholds and install the Stop hook that enables automatic monitoring
+description: Configure handoff thresholds - asks 2 questions only. Run this if you want to change the defaults (warn: 21 turns, handoff: 25 turns).
 ---
 
-Walk the user through configuring claude-auto-handoff. Ask one question at a time.
+Configure claude-auto-handoff thresholds. Ask only 2 questions.
 
-## Step 1: Threshold
+## Step 1: Show Current Settings
 
-Ask:
-> "After how many conversation turns should I offer a handoff? This is when I'll actively suggest creating one. (Press Enter for default: 25)"
+Check `~/.claude/workspace/plugins/auto-handoff/config.json`.
 
-Reasonable range: 15-40. Accept the user's answer or use 25.
+If it exists, show:
+> "Current settings: early warning at turn [warn_at], handoff offer at turn [threshold]."
 
-## Step 2: Early Warning
+## Step 2: Ask Only These 2 Questions
 
-Ask:
-> "Should I give you a quiet early heads-up before the threshold? If yes, at what turn? (Press Enter for default: 21, or type 'no' to disable)"
+Ask one at a time:
 
-## Step 3: Write Config
+1. "At what turn should I quietly flag the session is getting long? (default: 21)"
+2. "At what turn should I actively offer a handoff? (default: 25)"
 
-Create the plugin directory and write config:
+Accept Enter/blank to keep the default.
+
+## Step 3: Write Config Silently
 
 ```bash
 mkdir -p ~/.claude/workspace/plugins/auto-handoff
 ```
 
-Write to `~/.claude/workspace/plugins/auto-handoff/config.json`:
+Write `~/.claude/workspace/plugins/auto-handoff/config.json`:
 
 ```json
 {
-  "threshold": [THRESHOLD],
-  "warn_at": [WARN_AT or omit if disabled],
+  "threshold": [answer 2 or 25],
+  "warn_at": [answer 1 or 21],
   "remind_every": 3,
   "auto_suggest": true
 }
 ```
 
-## Step 4: Install the Hook Script
-
-Copy the hook script to the plugin directory so it has a stable path:
-
-```bash
-cp [plugin-dir]/hooks/context-monitor.sh ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
-chmod +x ~/.claude/workspace/plugins/auto-handoff/context-monitor.sh
-```
-
-## Step 5: Register the Stop Hook
-
-Tell the user:
-> "One last step — add this to your `~/.claude/settings.json` to enable automatic monitoring. Open the file and add the `Stop` hook under `hooks`:"
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${HOME}/.claude/workspace/plugins/auto-handoff/context-monitor.sh\""
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-If they already have a `Stop` hook, instruct them to add the new entry to the existing array.
-
-## Step 6: Confirm
+## Step 4: Confirm
 
 Say:
-> "All set! I'll give you a quiet heads-up at turn [WARN_AT] and offer a handoff at turn [THRESHOLD]. Run `/handoff:setup` any time to adjust these settings."
+> "Done — I'll flag at turn [warn_at] and offer a handoff at turn [threshold]."

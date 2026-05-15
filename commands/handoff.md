@@ -1,61 +1,70 @@
 ---
-description: Guided handoff - Claude gathers git context then asks you key questions one at a time before writing HANDOFF.md
+description: Automatically generate a handoff document from the current conversation and git context, clear the session, and resume immediately - no questions asked
 ---
 
-Run a guided handoff. Gather context silently first, then ask one question at a time.
+Generate a handoff document automatically. Do not ask the user any questions.
 
-## Step 1: Gather Context Silently
+## Step 1: Gather All Context
 
-Run (skip steps that fail if no git):
-- `git status`
-- `git diff --stat`
-- `git log --oneline -5`
+Run silently (skip any that fail):
+```bash
+git branch --show-current
+git status
+git diff --stat
+git log --oneline -10
+```
 
-Note: files touched, current branch, what changed. Do not show output to the user yet.
+If `HANDOFF.md` already exists in the working directory, read it — carry forward any still-relevant goal, failed approaches, and warnings from previous sessions.
 
-## Step 2: Ask One Question at a Time
+## Step 2: Infer Everything from the Conversation
 
-Ask each question and wait for the answer before continuing:
-
-1. "What was the main goal of this session?"
-2. "What did we get done?"
-3. "Anything we tried that didn't work — that the next session should avoid?"
-4. "What are the specific next steps to continue from here?"
-5. "Any warnings or gotchas the next session should know about?"
+From the full conversation history, extract without asking:
+- **Goal**: what the user is trying to accomplish
+- **Current state**: what is working right now
+- **Files touched**: from git diff or files mentioned and edited in conversation
+- **What changed**: meaningful changes made this session
+- **What failed**: anything tried and abandoned — carry forward from previous handoff if still applicable
+- **Next steps**: logical next actions based on what remains
 
 ## Step 3: Write HANDOFF.md
 
-Combine git context with user answers:
-
 ```markdown
-# Handoff: [title from goal]
+# Handoff: [inferred title]
 
 **Generated**: [YYYY-MM-DD HH:MM]
 **Branch**: [branch or "no git"]
 **Status**: [In Progress / Blocked / Ready for Review]
 
 ## Goal
-- [from user answer]
+- [inferred from conversation]
 
 ## Current state
-- [from git + user answer on what's done]
+- [what is working right now]
 
 ## Files touched
 - [from git diff --stat — relative paths]
 
 ## What changed
-- [from git log + conversation]
+- [meaningful changes this session]
 
 ## What failed
-- [from user answer, or "None"]
+- [what was tried and abandoned, or "None"]
 
 ## Next steps
 - Open a fresh Claude Code session.
 - Read this handoff file first.
-- [from user answer]
+- [inferred next steps]
 ```
 
-## Step 4: Confirm
+## Step 4: Set Resume Flag
 
-Say:
-> "Handoff saved to `HANDOFF.md`. Open a fresh `claude` session in this directory — I'll automatically pick up where we left off."
+```bash
+touch ~/.claude/workspace/plugins/auto-handoff/.pending-resume
+```
+
+## Step 5: Clear and Resume
+
+1. Say: "Handoff created. Clearing session and resuming..."
+2. Run `/clear`
+3. After clear, read `HANDOFF.md` silently
+4. Immediately resume: say "Resuming: [title]. Next: [first real next step]." then start working
